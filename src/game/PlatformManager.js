@@ -21,7 +21,8 @@ export class PlatformManager {
             y: this.gameHeight - 50,
             width: this.platformWidth,
             height: this.platformHeight,
-            type: 'normal'
+            type: 'normal',
+            vx: 0
         });
 
         // Generate initial platforms
@@ -44,6 +45,25 @@ export class PlatformManager {
         // But to be safe, let's clamp it relative to previous platform if screen is huge.
         // For now, random x on screen is fine for standard mobile/desktop widths.
 
+        // Difficulty Scaling
+        // As we go higher (y gets smaller/more negative), increase difficulty
+        const depth = -y;
+        const movingChance = Math.min(0.5, depth / 10000); // Cap at 50% chance at 10000 height
+        const springChance = 0.1; // 10% chance for spring
+
+        let type = 'normal';
+        let vx = 0;
+        let hasSpring = false;
+
+        if (Math.random() < movingChance) {
+            type = 'moving';
+            vx = (Math.random() > 0.5 ? 1 : -1) * (2 + Math.random() * 2); // Speed 2-4
+        }
+
+        if (Math.random() < springChance) {
+            hasSpring = true;
+        }
+
         const x = Math.random() * (this.gameWidth - this.platformWidth);
 
         this.platforms.push({
@@ -51,7 +71,9 @@ export class PlatformManager {
             y,
             width: this.platformWidth,
             height: this.platformHeight,
-            type: 'normal'
+            type,
+            vx,
+            hasSpring
         });
     }
 
@@ -68,13 +90,24 @@ export class PlatformManager {
                 currentY = this.platforms[this.platforms.length - 1].y;
             }
         }
+
+        // Update moving platforms
+        this.platforms.forEach(p => {
+            if (p.type === 'moving') {
+                p.x += p.vx;
+                if (p.x <= 0 || p.x + p.width >= this.gameWidth) {
+                    p.vx *= -1;
+                }
+            }
+        });
     }
 
     draw(ctx, cameraY) {
-        ctx.fillStyle = '#646cff'; // Primary color
         this.platforms.forEach(p => {
             // Only draw if visible
             if (p.y > cameraY && p.y < cameraY + this.gameHeight) {
+                // Platform Body
+                ctx.fillStyle = p.type === 'moving' ? '#ff0055' : '#646cff';
                 ctx.beginPath();
                 ctx.roundRect(p.x, p.y - cameraY, p.width, p.height, 4); // Adjust for camera
                 ctx.fill();
@@ -82,7 +115,12 @@ export class PlatformManager {
                 // Add a top highlight
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
                 ctx.fillRect(p.x, p.y - cameraY, p.width, 4);
-                ctx.fillStyle = '#646cff';
+
+                // Spring
+                if (p.hasSpring) {
+                    ctx.fillStyle = '#00ff88';
+                    ctx.fillRect(p.x + p.width / 2 - 5, p.y - cameraY - 5, 10, 5);
+                }
             }
         });
     }
@@ -106,6 +144,10 @@ export class PlatformManager {
             ) {
                 // Snap to top of platform
                 player.y = p.y - player.height;
+
+                if (p.hasSpring) {
+                    return 'spring';
+                }
                 return true;
             }
         }

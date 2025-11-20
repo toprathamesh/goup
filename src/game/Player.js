@@ -55,7 +55,7 @@ export class Player {
     ctx.fill();
   }
 
-  jump() {
-    this.vy = this.jumpStrength;
+  jump(isSuper = false) {
+    this.vy = isSuper ? this.jumpStrength * 1.5 : this.jumpStrength;
   }
 }
