@@ -1,6 +1,6 @@
 import { Player } from './game/Player.js';
 import { PlatformManager } from './game/PlatformManager.js';
-import { ParticleSystem } from './game/ParticleSystem.js';
+// import { ParticleSystem } from './game/ParticleSystem.js'; // Temporarily disabled
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -20,18 +20,7 @@ let cameraY = 0;
 // Game Objects
 let player;
 let platformManager;
-let particleSystem;
-
-// Background Stars
-const stars = [];
-for (let i = 0; i < 100; i++) {
-    stars.push({
-        x: Math.random() * window.innerWidth,
-        y: Math.random() * window.innerHeight,
-        size: Math.random() * 2,
-        speed: Math.random() * 0.5 + 0.1
-    });
-}
+// let particleSystem;
 
 // Input State (Singleton)
 const input = {
@@ -58,11 +47,6 @@ window.addEventListener('keyup', (e) => {
 function resize() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-    // Re-distribute stars on resize
-    stars.forEach(s => {
-        s.x = Math.random() * canvas.width;
-        s.y = Math.random() * canvas.height;
-    });
 }
 window.addEventListener('resize', resize);
 resize();
@@ -70,7 +54,7 @@ resize();
 function initGame() {
     player = new Player(canvas.width, canvas.height);
     platformManager = new PlatformManager(canvas.width, canvas.height);
-    particleSystem = new ParticleSystem();
+    // particleSystem = new ParticleSystem();
     score = 0;
     cameraY = 0;
     scoreDisplay.innerText = `Score: 0 | High: ${highScore}`;
@@ -83,7 +67,6 @@ function startGame() {
     gameOverScreen.classList.remove('active');
     gameOverScreen.classList.add('hidden');
     initGame();
-    // Loop is already running
 }
 
 function gameOver() {
@@ -102,6 +85,8 @@ function gameOver() {
 function update() {
     if (gameState !== 'PLAYING') return;
 
+    if (!player) return; // Safety check
+
     player.update(input);
 
     // Camera Logic: Move camera up if player goes above 1/3 of screen
@@ -110,6 +95,23 @@ function update() {
         cameraY = targetY;
         score = Math.max(score, -cameraY); // Score is based on height
         scoreDisplay.innerText = `Score: ${Math.floor(score)} | High: ${highScore}`;
+    }
+
+    // Platform Logic
+    platformManager.update(cameraY);
+
+    // Collision
+    const collision = platformManager.checkCollision(player);
+    if (collision) {
+        if (collision === 'spring') {
+            player.jump(true); // Super jump
+        } else {
+            player.jump();
+        }
+    }
+
+    // Game Over Condition
+    if (player.y > cameraY + canvas.height) {
         gameOver();
     }
 }
@@ -119,26 +121,19 @@ function draw() {
     ctx.fillStyle = '#1a1a1a';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Draw Stars (Parallax)
-    ctx.fillStyle = 'white';
-    stars.forEach(s => {
-        // Parallax effect: stars move slower than camera
-        let y = (s.y - cameraY * s.speed) % canvas.height;
-        if (y < 0) y += canvas.height;
-        ctx.beginPath();
-        ctx.arc(s.x, y, s.size, 0, Math.PI * 2);
-        ctx.fill();
-    });
-
     if (gameState === 'PLAYING' || gameState === 'GAMEOVER') {
-        platformManager.draw(ctx, cameraY);
-        particleSystem.draw(ctx, cameraY);
+        if (platformManager) platformManager.draw(ctx, cameraY);
 
-        // Draw Player
-        ctx.save();
-        ctx.translate(0, -cameraY);
-        player.draw(ctx);
-        ctx.restore();
+        // Draw Player manually adjusting for camera to match PlatformManager
+        if (player) {
+            ctx.save();
+            // Instead of translate, let's just draw relative to camera if Player.draw supports it?
+            // Player.draw uses this.x, this.y.
+            // So we MUST translate.
+            ctx.translate(0, -cameraY);
+            player.draw(ctx);
+            ctx.restore();
+        }
     }
 }
 

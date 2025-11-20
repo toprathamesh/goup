@@ -5,7 +5,7 @@ export class Player {
     this.width = 40;
     this.height = 40;
     this.x = gameWidth / 2 - this.width / 2;
-    this.y = gameHeight - 150;
+    this.y = gameHeight - 50 - this.height - 10; // Spawn just above the platform
     this.prevY = this.y; // For collision detection
     this.vx = 0;
     this.vy = 0;
@@ -36,10 +36,9 @@ export class Player {
 
   draw(ctx) {
     ctx.fillStyle = this.color;
-    // Draw a simple rounded rectangle or character
+    // Draw a simple rectangle or character
     ctx.beginPath();
-    ctx.roundRect(this.x, this.y, this.width, this.height, 5);
-    ctx.fill();
+    ctx.fillRect(this.x, this.y, this.width, this.height);
 
     // Add some eyes for character
     ctx.fillStyle = 'white';

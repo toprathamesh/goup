@@ -5,8 +5,6 @@ export class PlatformManager {
         this.platforms = [];
         this.platformWidth = 80;
         this.platformHeight = 15;
-        // Jump physics: v0 = -13, g = 0.4. Max height = v0^2 / (2g) = 169 / 0.8 = ~211.
-        // Let's be safe and say max gap is 180.
         this.minGapY = 60;
         this.maxGapY = 180;
 
@@ -15,11 +13,11 @@ export class PlatformManager {
 
     reset() {
         this.platforms = [];
-        // Create starting platform
+        // Create starting platform (Full Width for safety)
         this.platforms.push({
-            x: this.gameWidth / 2 - this.platformWidth / 2,
+            x: 0,
             y: this.gameHeight - 50,
-            width: this.platformWidth,
+            width: this.gameWidth,
             height: this.platformHeight,
             type: 'normal',
             vx: 0
@@ -37,19 +35,10 @@ export class PlatformManager {
         const prevPlatform = this.platforms[this.platforms.length - 1];
         const y = prevPlatform.y - (this.minGapY + Math.random() * (this.maxGapY - this.minGapY));
 
-        // Ensure x is reachable.
-        // Horizontal speed = 6. Time to peak = 13/0.4 = 32.5 frames.
-        // Max horizontal distance = 6 * 32.5 = 195.
-        // We can place it anywhere within range, but let's keep it simple and just random for now,
-        // as the screen width is usually small enough that you can reach most places.
-        // But to be safe, let's clamp it relative to previous platform if screen is huge.
-        // For now, random x on screen is fine for standard mobile/desktop widths.
-
         // Difficulty Scaling
-        // As we go higher (y gets smaller/more negative), increase difficulty
         const depth = -y;
-        const movingChance = Math.min(0.5, depth / 10000); // Cap at 50% chance at 10000 height
-        const springChance = 0.1; // 10% chance for spring
+        const movingChance = Math.min(0.5, depth / 10000);
+        const springChance = 0.1;
 
         let type = 'normal';
         let vx = 0;
@@ -57,7 +46,7 @@ export class PlatformManager {
 
         if (Math.random() < movingChance) {
             type = 'moving';
-            vx = (Math.random() > 0.5 ? 1 : -1) * (2 + Math.random() * 2); // Speed 2-4
+            vx = (Math.random() > 0.5 ? 1 : -1) * (2 + Math.random() * 2);
         }
 
         if (Math.random() < springChance) {
@@ -109,10 +98,9 @@ export class PlatformManager {
                 // Platform Body
                 ctx.fillStyle = p.type === 'moving' ? '#ff0055' : '#646cff';
                 ctx.beginPath();
-                ctx.roundRect(p.x, p.y - cameraY, p.width, p.height, 4); // Adjust for camera
-                ctx.fill();
+                ctx.fillRect(p.x, p.y - cameraY, p.width, p.height);
 
-                // Add a top highlight
+                // Highlight
                 ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
                 ctx.fillRect(p.x, p.y - cameraY, p.width, 4);
 
@@ -130,9 +118,6 @@ export class PlatformManager {
         if (player.vy < 0) return false;
 
         for (let p of this.platforms) {
-            // Improved Collision Detection (prevents tunneling)
-            // Check if player passed through the platform in this frame
-
             const playerBottom = player.y + player.height;
             const playerPrevBottom = player.prevY + player.height;
 
@@ -140,7 +125,7 @@ export class PlatformManager {
                 player.x + player.width > p.x &&
                 player.x < p.x + p.width &&
                 playerBottom >= p.y &&
-                playerPrevBottom <= p.y + p.height // Was above or inside platform previously
+                playerPrevBottom <= p.y + p.height
             ) {
                 // Snap to top of platform
                 player.y = p.y - player.height;
