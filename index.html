@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Goup</title>
+    <link rel="stylesheet" href="./src/style.css">
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="gameCanvas"></canvas>
+      <div id="ui-layer">
+        <div id="score-display">Score: 0</div>
+        <div id="menu-screen" class="screen active">
+          <h1>GOUP</h1>
+          <p>Press SPACE to Start</p>
+          <p class="controls">Use Arrow Keys or A/D to Move</p>
+        </div>
+        <div id="game-over-screen" class="screen hidden">
+          <h1>GAME OVER</h1>
+          <p id="final-score">Score: 0</p>
+          <p>Press SPACE to Restart</p>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="./src/main.js"></script>
+  </body>
+</html>
